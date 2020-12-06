@@ -34,3 +34,5 @@ node_modules
 *.wasm
 /src/systems/target
 /target
+/src/fdr2csv/*.exe
+/src/fdr2csv/build/
