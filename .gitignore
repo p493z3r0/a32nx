@@ -35,4 +35,5 @@ node_modules
 /src/systems/target
 /target
 /src/fdr2csv/*.exe
+/src/fbw/obj/
 /src/fdr2csv/build/
