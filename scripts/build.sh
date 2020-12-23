@@ -27,6 +27,10 @@ build_fbw() {
     "${DIR}/../src/fbw/build.sh"
 }
 
+build_ap() {
+    "${DIR}/../src/ap/build.sh"
+}
+
 build_manifests() {
     node "${DIR}/build.js"
 }
@@ -69,6 +73,7 @@ if [ -z "$1" ]; then
     build_model
     build_systems
     build_fbw
+    build_ap
 else
     name="build_${1}"
     set -x
