@@ -223,17 +223,11 @@ pub async fn module(mut module: msfs::StandaloneModule) -> Result<(), Box<dyn st
         }
 
         let map = |t| {
-            let t = if reverse_hold || reverse_toggle {
-                mapf(t, -16384.0, 16384.0, athr::Gates::REV_IDLE, -20.0)
+            if reverse_hold || reverse_toggle {
+                athr::TLA::get(mapf(t, -16384.0, 16384.0, -6.0, -20.0))
             } else {
-                mapf(t, -16384.0, 16384.0, 0.0, 100.0)
-            };
-            for target in &[athr::Gates::TOGA, athr::Gates::FLEX_MCT, athr::Gates::CL] {
-                if t > *target - athr::Gates::GATE_SIZE && t < *target + athr::Gates::GATE_SIZE {
-                    return *target;
-                }
+                athr::TLA::get(mapf(t, -16384.0, 16384.0, 0.0, 100.0) * 0.45)
             }
-            t
         };
 
         athr.input().throttles = [map(t1), map(t2)];

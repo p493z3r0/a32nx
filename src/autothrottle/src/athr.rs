@@ -20,10 +20,95 @@ impl Mode {
     }
 }
 
+fn mapf(n: f64, in_min: f64, in_max: f64, out_min: f64, out_max: f64) -> f64 {
+    (n - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+}
+
+// DEG     POS        FEEDBACK
+// ----    --------   --------
+// -20° -> MAX REV    STOP
+//  -6° -> REV IDLE   DETENT
+//   0° -> IDLE       STOP
+//  +6° -> IDLE
+// +25° -> CL         DETENT
+// +35° -> FLEX/MCT   DETENT
+// +45° -> TOGA       STOP
+//
+// A "DETENT" is roughly 1.7°.
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum TLA {
+    MaxReverse,
+    IdleReverse,
+    Idle,
+    MaxClimb,
+    FlexMCT,
+    TOGA,
+    Manual(f64),
+}
+
+impl TLA {
+    #[allow(illegal_floating_point_literal_pattern)]
+    #[allow(clippy::manual_range_contains)]
+    pub fn get(t: f64) -> TLA {
+        const DETENT: f64 = 1.7;
+
+        // branches ordered from low to high
+        match t {
+            -20.0 => TLA::MaxReverse,
+            t if t < -6.0 - DETENT => TLA::Manual(mapf(t, -6.0 - DETENT, -20.0, 0.0, -20.0)),
+            t if t >= -6.0 - DETENT && t <= -6.0 => TLA::IdleReverse,
+            t if t > -6.0 && t < 0.0 => TLA::Manual(0.0),
+            0.0 => TLA::Idle,
+            t if t > 0.0 && t <= 6.0 => TLA::Manual(0.0),
+            t if t > 6.0 && t < 25.0 - DETENT => TLA::Manual(mapf(t, 6.0, 25.0 - DETENT, 0.0, 25.0)),
+            t if t >= 25.0 - DETENT && t <= 25.0 + DETENT => TLA::MaxClimb,
+            t if t >= 35.0 - DETENT && t <= 35.0 + DETENT => TLA::FlexMCT,
+            t if t >= 45.0 - DETENT => TLA::TOGA,
+            t => TLA::Manual(t),
+        }
+    }
+
+    fn angle(&self) -> f64 {
+        match self {
+            Self::MaxReverse => -20.0,
+            Self::IdleReverse => -6.0,
+            Self::Idle => 0.0,
+            Self::MaxClimb => 25.0,
+            Self::FlexMCT => 35.0,
+            Self::TOGA => 45.0,
+            Self::Manual(n) => *n,
+        }
+    }
+
+    fn n1(&self) -> f64 {
+        match self {
+            Self::MaxReverse => -20.0,
+            Self::IdleReverse => -6.0,
+            Self::Idle => 0.0,
+            Self::MaxClimb => 56.0,
+            Self::FlexMCT => 78.0,
+            Self::TOGA => 100.0,
+            Self::Manual(n) => {
+                if *n < 0.0 {
+                    *n
+                } else {
+                    (*n / 45.0) * 100.0
+                }
+            }
+        }
+    }
+}
+
+impl PartialOrd for TLA {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.n1().partial_cmp(&other.n1())
+    }
+}
+
 #[derive(Debug)]
 pub struct AutoThrottleInput {
     pub mode: Mode,
-    pub throttles: [f64; 2],
+    pub throttles: [TLA; 2],
     pub airspeed: f64,
     pub airspeed_target: f64,
     pub vls: f64,
@@ -47,17 +132,6 @@ pub struct AutoThrottleOutput {
     pub commanded: [f64; 2],
 }
 
-pub struct Gates {}
-impl Gates {
-    pub const GATE_SIZE: f64 = 1.0;
-
-    pub const TOGA: f64 = 100.0;
-    pub const FLEX_MCT: f64 = 95.0;
-    pub const CL: f64 = 90.0;
-    pub const IDLE: f64 = 0.0;
-    pub const REV_IDLE: f64 = -1.0;
-}
-
 #[derive(Debug, PartialEq)]
 enum Instinctive {
     Released,
@@ -70,7 +144,7 @@ pub struct AutoThrottle {
     speed_mode_pid: crate::pid::PID,
     thrust_rate_limiter: crate::rl::RateLimiter,
     instinctive: Instinctive,
-    thrust_lock_throttles: [f64; 2],
+    thrust_lock_throttles: [TLA; 2],
     commanded: f64,
     input: AutoThrottleInput,
     output: AutoThrottleOutput,
@@ -82,11 +156,11 @@ impl AutoThrottle {
             speed_mode_pid: crate::pid::PID::new(10.0, 1.0, 0.3, 10.0, 0.0, 100.0),
             thrust_rate_limiter: crate::rl::RateLimiter::new(),
             instinctive: Instinctive::Released,
-            thrust_lock_throttles: [0.0, 0.0],
+            thrust_lock_throttles: [TLA::Idle, TLA::Idle],
             commanded: 0.0,
             input: AutoThrottleInput {
                 mode: Mode::Init,
-                throttles: [0.0, 0.0],
+                throttles: [TLA::Idle, TLA::Idle],
                 airspeed: 0.0,
                 airspeed_target: 0.0,
                 vls: 0.0,
@@ -114,14 +188,14 @@ impl AutoThrottle {
                 if self.output.mode.is_override() {
                     self.commanded
                 } else {
-                    self.input.throttles[i].min(self.commanded)
+                    self.input.throttles[i].n1().min(self.commanded)
                 }
             };
 
             self.output.commanded = [m(0), m(1)];
         } else {
             self.commanded = 100.0;
-            self.output.commanded = [self.input.throttles[0], self.input.throttles[1]];
+            self.output.commanded = [self.input.throttles[0].n1(), self.input.throttles[1].n1()];
         }
     }
 
@@ -172,7 +246,7 @@ impl AutoThrottle {
                 // Action on A/THR pushbutton switch
                 self.input.pushbutton
                 // TOGA condition
-                || self.input.throttles.iter().all(|t| *t == Gates::FLEX_MCT || *t == Gates::TOGA)
+                || self.input.throttles.iter().all(|t| *t == TLA::FlexMCT || *t == TLA::TOGA)
                 || self.input.alpha_floor
             );
 
@@ -192,10 +266,10 @@ impl AutoThrottle {
             || false
             // Go around condition i.e. one throttle control lever is placed in the non active
             // area (> MCT) below 100ft without engagement of the GO AROUND mode on the AP/FD.
-            || (false && (self.input.radio_height < 100.0 && self.input.throttles.iter().any(|t| *t > Gates::FLEX_MCT)))
+            || (false && (self.input.radio_height < 100.0 && self.input.throttles.iter().any(|t| *t > TLA::FlexMCT)))
             // Both throttle control levers placed in the IDLE position.
             // Both throttle control levers placed in the REVERSE position.
-            || (!self.output.mode.is_override() && !self.input.alpha_floor && self.input.throttles.iter().all(|t| *t <= Gates::IDLE));
+            || (!self.output.mode.is_override() && !self.input.alpha_floor && self.input.throttles.iter().all(|t| *t <= TLA::Idle));
 
         // SR flip-flop
         self.output.armed = if s {
@@ -216,7 +290,7 @@ impl AutoThrottle {
                 // is between IDLE and MCT (including MCT) with FLEX TO limit mode not selected.
                 || (one_engine_cond && false)
                 // The two throttle control levers are between IDLE and CL (CL included).
-                || self.input.throttles.iter().all(|t| *t > Gates::IDLE && *t <= Gates::CL)
+                || self.input.throttles.iter().all(|t| *t > TLA::Idle && *t <= TLA::MaxClimb)
             );
     }
 
