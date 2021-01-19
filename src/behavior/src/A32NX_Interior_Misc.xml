@@ -509,13 +509,17 @@
         </DefaultTemplateParameters>
         <Component ID="#NODE_ID#" Node="#NODE_ID#">
             <!-- temporary code for testing -->
-            <Update>
-                (A:GENERAL ENG THROTTLE LEVER POSITION:#ID#,percent) sp0
-                l0 0 >= if{
-                    l0 0 - 100 25 - * 100 0 - / 25 +
-                } els{
-                    l0 -20 - 25 0 - * 0 -20 - / 0 +
-                } (>L:A32NX_3D_THROTTLE_LEVER_POSITION_#ID#,percent)
+            <Update type="rnp">
+                macro mapf($n, $in_min, $in_max, $out_min, $out_max) {
+                    ($n - $in_min) * ($out_max - $out_min) / ($in_max - $in_min) + $out_min
+                }
+
+                let pos = (A:GENERAL ENG THROTTLE LEVER POSITION:#ID#, percent);
+                (L:A32NX_3D_THROTTLE_LEVER_POSITION_#ID#, percent) = if pos >= 0 {
+                    mapf(pos, 0, 100, 25, 100)
+                } else {
+                    mapf(pos, -20, 0, 0, 25)
+                };
             </Update>
 
             <!-- REVERSER -->

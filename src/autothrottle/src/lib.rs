@@ -4,7 +4,9 @@ use ::msfs::{
     self,
     sim_connect::{data_definition, Period, SimConnectRecv, SIMCONNECT_OBJECT_ID_USER},
 };
+
 mod athr;
+mod lf;
 mod pid;
 mod rl;
 

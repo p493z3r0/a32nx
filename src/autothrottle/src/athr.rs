@@ -60,7 +60,9 @@ impl TLA {
             t if t > -6.0 && t < 0.0 => TLA::Manual(0.0),
             0.0 => TLA::Idle,
             t if t > 0.0 && t <= 6.0 => TLA::Manual(0.0),
-            t if t > 6.0 && t < 25.0 - DETENT => TLA::Manual(mapf(t, 6.0, 25.0 - DETENT, 0.0, 25.0)),
+            t if t > 6.0 && t < 25.0 - DETENT => {
+                TLA::Manual(mapf(t, 6.0, 25.0 - DETENT, 0.0, 25.0))
+            }
             t if t >= 25.0 - DETENT && t <= 25.0 + DETENT => TLA::MaxClimb,
             t if t >= 35.0 - DETENT && t <= 35.0 + DETENT => TLA::FlexMCT,
             t if t >= 45.0 - DETENT => TLA::TOGA,
@@ -81,7 +83,7 @@ impl TLA {
     }
 
     fn n1(&self) -> f64 {
-        match self {
+        let t = match self {
             Self::MaxReverse => -20.0,
             Self::IdleReverse => -6.0,
             Self::Idle => 0.0,
@@ -95,6 +97,13 @@ impl TLA {
                     (*n / 45.0) * 100.0
                 }
             }
+        };
+        if t <= 0.0 {
+            t
+        } else if t <= 56.0 {
+            mapf(t, 0.0, 56.0, 0.0, 86.0)
+        } else {
+            mapf(t, 56.0, 100.0, 86.5, 100.0)
         }
     }
 }
@@ -143,6 +152,7 @@ enum Instinctive {
 pub struct AutoThrottle {
     speed_mode_pid: crate::pid::PID,
     thrust_rate_limiter: crate::rl::RateLimiter,
+    lag_filter: crate::lf::LagFilter,
     instinctive: Instinctive,
     thrust_lock_throttles: [TLA; 2],
     commanded: f64,
@@ -155,6 +165,7 @@ impl AutoThrottle {
         AutoThrottle {
             speed_mode_pid: crate::pid::PID::new(10.0, 1.0, 0.3, 10.0, 0.0, 100.0),
             thrust_rate_limiter: crate::rl::RateLimiter::new(),
+            lag_filter: crate::lf::LagFilter::new(),
             instinctive: Instinctive::Released,
             thrust_lock_throttles: [TLA::Idle, TLA::Idle],
             commanded: 0.0,
@@ -336,10 +347,16 @@ impl AutoThrottle {
 
         self.commanded = match self.output.mode {
             Mode::Init => unreachable!(),
-            Mode::Speed => self.thrust_rate_limiter.iterate(
-                self.speed_mode_pid
-                    .update(self.input.target_airspeed(), self.input.airspeed, dt),
-                10.0,
+            Mode::Speed => self.lag_filter.iterate(
+                self.thrust_rate_limiter.iterate(
+                    self.speed_mode_pid.update(
+                        self.input.target_airspeed(),
+                        self.input.airspeed,
+                        dt,
+                    ),
+                    10.0,
+                    dt,
+                ),
                 dt,
             ),
             Mode::ThrustClimb | Mode::ThrustDescent => self.thrust_rate_limiter.iterate(
