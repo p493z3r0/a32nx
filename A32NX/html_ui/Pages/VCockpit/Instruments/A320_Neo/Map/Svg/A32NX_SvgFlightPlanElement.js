@@ -108,117 +108,149 @@ class SvgFlightPlanElement extends SvgMapElement {
      */
     makePathFromWaypoints(waypoints, map) {
         let points = [];
+        const arcs = [];
         let pIndex = 0;
 
         for (let i = 0; i < waypoints.length; i++) {
             const waypoint = waypoints[i];
 
-            const pathPoints = [];
-            pathPoints.push(waypoint.infos.coordinates.toLatLong());
+            this.latLong = waypoint.infos.coordinates.toLatLong();
 
-            for (let j = 0; j < pathPoints.length; j++) {
-                this.latLong = pathPoints[j];
+            let lastLat = NaN;
+            let lastLong = NaN;
+            if (this.latLong.lat !== lastLat && this.latLong.long !== lastLong) {
+                const deltaLong = Math.abs(lastLong - this.latLong.long);
 
-                let lastLat = NaN;
-                let lastLong = NaN;
-                if (this.latLong.lat !== lastLat && this.latLong.long !== lastLong) {
-                    const deltaLong = Math.abs(lastLong - this.latLong.long);
-
-                    if (deltaLong > 2) {
-                        const lastX = Math.cos(lastLat / 180 * Math.PI) * Math.cos(lastLong / 180 * Math.PI);
-                        const lastY = Math.cos(lastLat / 180 * Math.PI) * Math.sin(lastLong / 180 * Math.PI);
-                        const lastZ = Math.sin(lastLat / 180 * Math.PI);
-                        const X = Math.cos(this.latLong.lat / 180 * Math.PI) * Math.cos(this.latLong.long / 180 * Math.PI);
-                        const Y = Math.cos(this.latLong.lat / 180 * Math.PI) * Math.sin(this.latLong.long / 180 * Math.PI);
-                        const Z = Math.sin(this.latLong.lat / 180 * Math.PI);
-                        const stepCount = Math.floor(deltaLong / 2);
-                        for (let k = 0; k < stepCount; k++) {
-                            const d = (k + 1) / (stepCount + 1);
-                            const x = lastX * (1 - d) + X * d;
-                            const y = lastY * (1 - d) + Y * d;
-                            const z = lastZ * (1 - d) + Z * d;
-                            const long = Math.atan2(y, x) / Math.PI * 180;
-                            const hyp = Math.sqrt(x * x + y * y);
-                            const lat = Math.atan2(z, hyp) / Math.PI * 180;
-                            if (points[pIndex]) {
-                                map.coordinatesToXYToRef(new LatLong(lat, long), points[pIndex]);
-                            } else {
-                                const p = map.coordinatesToXY(new LatLong(lat, long));
-                                p.refWP = waypoint;
-                                p.refWPIndex = i;
-                                points.push(p);
-                            }
-                            pIndex++;
+                if (deltaLong > 2) {
+                    const lastX = Math.cos(lastLat / 180 * Math.PI) * Math.cos(lastLong / 180 * Math.PI);
+                    const lastY = Math.cos(lastLat / 180 * Math.PI) * Math.sin(lastLong / 180 * Math.PI);
+                    const lastZ = Math.sin(lastLat / 180 * Math.PI);
+                    const X = Math.cos(this.latLong.lat / 180 * Math.PI) * Math.cos(this.latLong.long / 180 * Math.PI);
+                    const Y = Math.cos(this.latLong.lat / 180 * Math.PI) * Math.sin(this.latLong.long / 180 * Math.PI);
+                    const Z = Math.sin(this.latLong.lat / 180 * Math.PI);
+                    const stepCount = Math.floor(deltaLong / 2);
+                    for (let k = 0; k < stepCount; k++) {
+                        const d = (k + 1) / (stepCount + 1);
+                        const x = lastX * (1 - d) + X * d;
+                        const y = lastY * (1 - d) + Y * d;
+                        const z = lastZ * (1 - d) + Z * d;
+                        const long = Math.atan2(y, x) / Math.PI * 180;
+                        const hyp = Math.sqrt(x * x + y * y);
+                        const lat = Math.atan2(z, hyp) / Math.PI * 180;
+                        if (points[pIndex]) {
+                            map.coordinatesToXYToRef(new LatLong(lat, long), points[pIndex]);
+                        } else {
+                            const p = map.coordinatesToXY(new LatLong(lat, long));
+                            p.refWP = waypoint;
+                            p.refWPIndex = i;
+                            points.push(p);
                         }
+                        pIndex++;
                     }
-
-                    lastLat = this.latLong.lat;
-                    lastLong = this.latLong.long;
-
-                    if (points[pIndex]) {
-                        map.coordinatesToXYToRef(this.latLong, points[pIndex]);
-                        if (i === 0) {
-                            if (points[0].x === this._lastP0X && points[0].y === this._lastP0Y) {
-                                this._forceFullRedraw++;
-                                if (this._forceFullRedraw < 60) {
-                                    return;
-                                }
-                                this._forceFullRedraw = 0;
-                            }
-                            this._lastP0X = points[0].x;
-                            this._lastP0Y = points[0].y;
-                        }
-                    } else {
-                        const p = map.coordinatesToXY(this.latLong);
-                        p.refWP = waypoint;
-                        p.refWPIndex = i;
-                        points.push(p);
-                    }
-                    pIndex++;
                 }
+
+                lastLat = this.latLong.lat;
+                lastLong = this.latLong.long;
+
+                if (points[pIndex]) {
+                    map.coordinatesToXYToRef(this.latLong, points[pIndex]);
+                    if (i === 0) {
+                        if (points[0].x === this._lastP0X && points[0].y === this._lastP0Y) {
+                            this._forceFullRedraw++;
+                            if (this._forceFullRedraw < 60) {
+                                return;
+                            }
+                            this._forceFullRedraw = 0;
+                        }
+                        this._lastP0X = points[0].x;
+                        this._lastP0Y = points[0].y;
+                    }
+                } else {
+                    const p = map.coordinatesToXY(this.latLong);
+                    p.refWP = waypoint;
+                    p.refWPIndex = i;
+                    points.push(p);
+                }
+                pIndex++;
             }
         }
 
-        for (let bevels = 0; bevels < 4; bevels++) {
-            const bevelAmount = map.NMToPixels(0.5) / (bevels + 1);
-            if (points.length > 2) {
-                const beveledPoints = [points[0]];
-                for (let i = 1; i < points.length - 1; i++) {
-                    const pPrev = points[i - 1];
-                    const p = points[i];
-                    const pNext = points[i + 1];
-                    if ((pPrev.x == p.x && pPrev.y == p.y) || (pNext.x == p.x && pNext.y == p.y)) {
-                        beveledPoints.push(p);
-                        continue;
-                    }
-                    let xPrev = pPrev.x - p.x;
-                    let yPrev = pPrev.y - p.y;
-                    const dPrev = Math.sqrt(xPrev * xPrev + yPrev * yPrev);
-                    xPrev /= dPrev;
-                    yPrev /= dPrev;
-                    let xNext = pNext.x - p.x;
-                    let yNext = pNext.y - p.y;
-                    const dNext = Math.sqrt(xNext * xNext + yNext * yNext);
-                    xNext /= dNext;
-                    yNext /= dNext;
-                    const b = Math.min(dPrev / 3, dNext / 3, bevelAmount);
-                    const refWPIndex = p.refWPIndex + (((bevels === 1) && (i % 2 === 0)) ? 1 : 0);
-                    const refWP = (((bevels === 1) && (i % 2 === 0)) ? pNext.refWP : p.refWP);
-                    beveledPoints.push({
-                        x: p.x + xPrev * b,
-                        y: p.y + yPrev * b,
-                        refWP: refWP,
-                        refWPIndex: refWPIndex,
-                    }, {
-                        x: p.x + xNext * b,
-                        y: p.y + yNext * b,
-                        refWP: refWP,
-                        refWPIndex: refWPIndex,
-                    });
+        if (points.length > 2) {
+            const beveledPoints = [points[0]];
+            const nmPx = map.NMToPixels(1);
+            // exclude the first and last point
+            for (let i = 1; i < points.length - 1; i++) {
+                const pPrev = points[i - 1];
+                const p = points[i];
+                const pNext = points[i + 1];
+                if ((pPrev.x == p.x && pPrev.y == p.y) || (pNext.x == p.x && pNext.y == p.y)) {
+                    beveledPoints.push(p);
+                    continue;
                 }
-                beveledPoints.push(points[points.length - 1]);
-                points = beveledPoints;
+
+                const hdgPrev = Avionics.Utils.computeGreatCircleHeading(
+                    pPrev.refWP.infos.coordinates,
+                    p.refWP.infos.coordinates,
+                );
+                const hdgNext = Avionics.Utils.computeGreatCircleHeading(
+                    p.refWP.infos.coordinates,
+                    pNext.refWP.infos.coordinates,
+                );
+                const mod = (x, n) => x - Math.floor(x / n) * n;
+                const deltaPc = mod(hdgNext - hdgPrev + 180, 360) - 180;
+
+                const kts = Math.max(SimVar.GetSimVarValue("GPS GROUND SPEED", "knots"), 220); // knots, i.e. nautical miles per hour
+                const nms = kts / 60 / 60; // nautical miles per second
+
+                const deg2rad = Math.PI / 180;
+                const xKr = nms / 3 / deg2rad; // turn radius
+                const xs = xKr * Math.tan(deg2rad * Math.abs(deltaPc / 2));
+
+                const { lat: pLat, long: pLong } = p.refWP.infos.coordinates;
+                const turnIn = Avionics.Utils.bearingDistanceToCoordinates(mod(hdgPrev + 180, 360), xs, pLat, pLong).toLatLong();
+                const turnOut = Avionics.Utils.bearingDistanceToCoordinates(hdgNext, xs, pLat, pLong).toLatLong();
+
+                const tp = Avionics.Utils.bearingDistanceToCoordinates(
+                    deltaPc >= 0 ? mod(hdgPrev + 90, 360) : mod(hdgPrev - 90, 360),
+                    xKr,
+                    turnIn.lat,
+                    turnIn.long
+                ).toLatLong();
+
+                const { x: inX, y: inY } = map.coordinatesToXY(turnIn);
+                const { x: outX, y: outY } = map.coordinatesToXY(turnOut);
+                const { x: tpX, y: tpY } = map.coordinatesToXY(tp);
+
+                circles.push({
+                    cx: tpX,
+                    cy: tpY,
+                    r: xKr * nmPx,
+                });
+
+                beveledPoints.push({
+                    x: inX,
+                    y: inY,
+                    refWP: p.refWP,
+                    refWPIndex: p.refWPIndex,
+                }, {
+                    x: outX,
+                    y: outY,
+                    refWP: p.refWP,
+                    refWPIndex: p.refWPIndex,
+                    turn: true,
+                });
+
+                arcs.push({
+                    inX,
+                    inY,
+                    outX,
+                    outY,
+                    r: xKr * nmPx,
+                    clockwise: deltaPc < 0,
+                });
             }
+            beveledPoints.push(points[points.length - 1]);
+            points = beveledPoints;
         }
 
         if (points.length > 0) {
@@ -253,14 +285,19 @@ class SvgFlightPlanElement extends SvgMapElement {
                     if (i === 0) {
                         pathString += "M" + p1x + " " + p1y + " L" + p2x + " " + p2y + " ";
                     } else {
-                        if (p2.refWP.endsInDiscontinuity) {
+                        if (p2.refWP.endsInDiscontinuity || p2.turn) {
                             pathString += `M ${p2x} ${p2y} `;
                         } else {
-                            pathString += "L" + p2x + " " + p2y + " ";
+                            pathString += `L ${p2x} ${p2y} `;
                         }
                     }
                 }
             }
+        }
+
+        for (const arc of arcs) {
+            const { inX, inY, outX, outY, r, clockwise } = arc;
+            pathString += ` M ${inX} ${inY} A ${r} ${r} 0 0 ${clockwise ? 0 : 1} ${outX} ${outY}`;
         }
 
         return pathString;
