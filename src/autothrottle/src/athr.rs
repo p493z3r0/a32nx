@@ -110,7 +110,7 @@ impl TLA {
 
 impl PartialOrd for TLA {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.n1().partial_cmp(&other.n1())
+        self.angle().partial_cmp(&other.angle())
     }
 }
 

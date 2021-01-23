@@ -20,7 +20,7 @@ function translate(filename) {
 
     Array.from(dom.window.document.querySelectorAll('[type="rnp"]'))
         .forEach((e) => {
-            const { messages, output } = rnp.translate(e.innerHTML, '(inline)', (r, s) => {
+            const { messages, output } = rnp.translate(e.textContent, '(inline)', (r, s) => {
                 throw new Error(`Could not resolve '${s}' from '${r}'`);
             });
             messages.forEach((m) => {
