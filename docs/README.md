@@ -16,13 +16,12 @@
 - :x: due to missing custom ATHR system, the (OP) CLB/DES modes might need manual thrust control
       -> a simple and hacky workaround has been added though
 - :x: after a longer pause the custom autopilot system can goes crazy
-- :x: due to lack of VNAV, CLB and DES mode are currently only using SPD/MACH
-- :x: CLB and DES do not respect altitude constraints
+- :x: due to lack of VNAV, DES mode is currently only using SPD/MACH
+- :x: CLB and DES do not respect altitude constraints (contraints are supported but are lacking proper input)
 - :x: Go Around modes are missing
 - :x: Transitions might not be as they should
 - :x: FD off/on does not deactivate all FMA items
 - :x: Engagement of AP with FD off is incorrect
-- :x: In manual approach LOC and G/S might be lost too fast with mode reversion to HDG + V/S
 - :x: AP disconnect does not trigger master warning etc.
 - :x: AP does not disconnect with rudder or sidestick input
 - :x: NAV mode can always be armed or engaged
@@ -31,7 +30,7 @@
 
 #### Considered solved
 
-- :heavy_check_mark: nothing yet ;-)
+- :heavy_check_mark: In manual approach LOC and G/S might be lost too fast with mode reversion to HDG + V/S
 
 ## Custom Fly-By-Wire System
 
@@ -176,12 +175,10 @@ DetentTakeOffGoAround = 1.00
 - :x: Direct Law (in flight)
 - :x: Simulation of hydraulic system missing -> when engines are off / electric pump is off control surfaces should not work
 
-#### Implemented (awaiting feedback)
-- :large_orange_diamond: Normal Law (Pitch) creates a too small pitch rate on low speed or g-load on higher speeds
-- :large_orange_diamond: Rotation Law
-
 #### Considered solved
 
+- :heavy_check_mark: Normal Law (Pitch) creates a too small pitch rate on low speed or g-load on higher speeds
+- :heavy_check_mark: Rotation Law including tailstrike protection
 - :heavy_check_mark: pitch normal law (C* law) sometimes oscillates on low speed
 - :heavy_check_mark: yaw damper / rudder control missing
 - :heavy_check_mark: pitch attitude protections can oscillate
