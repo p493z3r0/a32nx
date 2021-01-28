@@ -143,12 +143,10 @@ DetentTakeOffGoAround = 1.00
 - :x: Direct Law (in flight)
 - :x: Simulation of hydraulic system missing -> when engines are off / electric pump is off control surfaces should not work
 
-#### Implemented (awaiting feedback)
-- :large_orange_diamond: Normal Law (Pitch) creates a too small pitch rate on low speed or g-load on higher speeds
-- :large_orange_diamond: Rotation Law
-
 #### Considered solved
 
+- :heavy_check_mark: Normal Law (Pitch) creates a too small pitch rate on low speed or g-load on higher speeds
+- :heavy_check_mark: Rotation Law including tailstrike protection
 - :heavy_check_mark: pitch normal law (C* law) sometimes oscillates on low speed
 - :heavy_check_mark: yaw damper / rudder control missing
 - :heavy_check_mark: pitch attitude protections can oscillate
