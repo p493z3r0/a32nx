@@ -44,7 +44,7 @@ typedef struct {
   boolean_T DelayInput1_DSTATE_a;
   boolean_T DelayInput1_DSTATE_fn;
   boolean_T DelayInput1_DSTATE_h;
-  boolean_T Delay_DSTATE_b[100];
+  boolean_T Delay_DSTATE_n[100];
   uint8_T is_active_c6_AutopilotStateMachine;
   uint8_T is_c6_AutopilotStateMachine;
   uint8_T is_ON;
@@ -60,6 +60,7 @@ typedef struct {
   boolean_T sLandModeArmedOrActive;
   boolean_T eventTime_not_empty;
   boolean_T eventTime_not_empty_k;
+  boolean_T newFcuAltitudeSelected_c;
   boolean_T eventTime_not_empty_m;
   boolean_T eventTime_not_empty_e;
   boolean_T state;
@@ -115,7 +116,7 @@ struct Parameters_AutopilotStateMachine_T_ {
   real_T Delay_InitialCondition_m;
   boolean_T Out1_Y0;
   boolean_T Constant6_Value;
-  boolean_T Delay_InitialCondition_d;
+  boolean_T Delay_InitialCondition_mj;
 };
 
 extern const ap_sm_input AutopilotStateMachine_rtZap_sm_input;
@@ -186,6 +187,7 @@ class AutopilotStateMachineModelClass {
   void AutopilotStateMachine_SRS_entry(void);
   void AutopilotStateMachine_GS(void);
   void AutopilotStateMachine_OP_CLB_during(void);
+  void AutopilotStateMachine_OP_CLB(void);
   void AutopilotStateMachine_OP_DES_during(void);
   void AutopilotStateMachine_exit_internal_ON(void);
   void AutopilotStateMachine_ON_l(void);
