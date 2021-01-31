@@ -2291,7 +2291,7 @@ void AutopilotStateMachineModelClass::step()
     rtb_GainTheta1 = rtb_Divide;
   }
 
-  AutopilotStateMachine_B.BusAssignment_g.vertical.condition.ALT_CPT = ((sCLB_tmp <= rtb_Saturation / 6.0) &&
+  AutopilotStateMachine_B.BusAssignment_g.vertical.condition.ALT_CPT = ((sCLB_tmp <= rtb_Saturation / 5.0) &&
     ((rtb_GainTheta1 == rtb_GainTheta) && ((rtb_Saturation >= 100.0) && state_tmp)));
   rtb_GainTheta1 = AutopilotStateMachine_U.in.input.H_constraint_ft - AutopilotStateMachine_U.in.data.H_ind_ft;
   sCLB_tmp = std::abs(rtb_GainTheta1);
@@ -2309,7 +2309,7 @@ void AutopilotStateMachineModelClass::step()
   AutopilotStateMachine_B.BusAssignment_g.vertical.condition.ALT_CST_CPT =
     ((AutopilotStateMachine_U.in.input.H_constraint_ft != 0.0) && (AutopilotStateMachine_U.in.input.H_constraint_ft !=
       AutopilotStateMachine_U.in.input.H_fcu_ft) && ((sCLB_tmp <= std::abs(AutopilotStateMachine_U.in.data.H_dot_ft_min)
-       / 6.0) && ((rtb_GainTheta1 == rtb_GainTheta) && ((rtb_Saturation >= 300.0) && state_tmp))));
+       / 5.0) && ((rtb_GainTheta1 == rtb_GainTheta) && ((rtb_Saturation >= 300.0) && state_tmp))));
   AutopilotStateMachine_B.BusAssignment_g.vertical.condition.CLB = ((rtb_y_d > 5.0) && (rtb_Divide > 50.0) &&
     (AutopilotStateMachine_DWork.Delay_DSTATE.output.mode == lateral_mode_NAV) &&
     (AutopilotStateMachine_DWork.Delay1_DSTATE.output.mode != vertical_mode_GS_CPT) &&
