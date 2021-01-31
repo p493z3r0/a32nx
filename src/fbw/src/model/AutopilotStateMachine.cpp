@@ -2325,6 +2325,8 @@ void AutopilotStateMachineModelClass::step()
     (AutopilotStateMachine_DWork.Delay1_DSTATE.output.mode != vertical_mode_FLARE) &&
     (AutopilotStateMachine_DWork.Delay1_DSTATE.output.mode != vertical_mode_ROLL_OUT));
   AutopilotStateMachine_B.BusAssignment_g.vertical.condition.GS_CPT = (AutopilotStateMachine_U.in.data.nav_valid &&
+    ((AutopilotStateMachine_DWork.Delay_DSTATE.output.mode == lateral_mode_LOC_CPT) ||
+     (AutopilotStateMachine_DWork.Delay_DSTATE.output.mode == lateral_mode_LOC_TRACK)) &&
     (AutopilotStateMachine_U.in.data.nav_gs_error_deg >= -0.2) && (tmp < 1.0));
   AutopilotStateMachine_B.BusAssignment_g.vertical.condition.GS_TRACK = (AutopilotStateMachine_U.in.time.simulation_time
     - AutopilotStateMachine_DWork.eventTime_c >= 15.0);
