@@ -1,3 +1,21 @@
+/*
+ * A32NX
+ * Copyright (C) 2020-2021 FlyByWire Simulations and its contributors
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 'use strict';
 
 module.exports = {
@@ -6,25 +24,22 @@ module.exports = {
         browser: true,
     },
     extends: 'airbnb',
-    parser: '@babel/eslint-parser',
+    parser: '@typescript-eslint/parser',
     parserOptions: {
         ecmaVersion: 2021,
         sourceType: 'script',
         requireConfigFile: false,
-        babelOptions: {
-            presets: ['@babel/preset-react'],
-        },
     },
     overrides: [
         {
-            files: ['*.jsx'],
+            files: ['*.jsx', '*.tsx'],
             parserOptions: {
                 sourceType: 'module',
                 ecmaFeatures: { jsx: true },
             },
         },
         {
-            files: ['*.mjs'],
+            files: ['*.mjs', '*.ts', '*.d.ts'],
             parserOptions: {
                 sourceType: 'module',
             },
@@ -41,6 +56,7 @@ module.exports = {
             devDependencies: true,
         }],
         'indent': ['error', 4],
+        'react/jsx-filename-extension': [2, { extensions: ['.jsx', '.tsx'] }],
         'react/jsx-indent': ['error', 4],
         'no-restricted-syntax': 'off',
         'no-unused-vars': ['error', {
@@ -61,7 +77,7 @@ module.exports = {
         'react/destructuring-assignment': 'off',
         'no-param-reassign': 'off',
         'no-undef-init': 'off',
-        'max-len': ['error', { code: 128 }],
+        'max-len': ['error', { code: 192 }],
     },
     globals: {
         Simplane: 'readonly',
